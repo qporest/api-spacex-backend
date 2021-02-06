@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  db:
+    image: timescale/timescaledb-postgis:2.0.1-pg12
+    container_name: timescale
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: spacex
+    volumes:
+      - "./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d/"
+
+volumes:
+  initDB.sql:
