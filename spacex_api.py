@@ -4,8 +4,12 @@ import psycopg2
 from pgcopy import CopyManager
 from collections import namedtuple
 from datetime import datetime, timezone
+from dateutil import parser, tz
+import decimal
 
-DB_COLUMNS = namedtuple("DB_COLUMNS", ["recorded_at", "satelite_id","longitude","latitude"])
+SATELITE_TABLE = "satelites"
+SATELITE_POS_TABLE = "satelite_positions"
+SAT_POSITION_COLUMNS = namedtuple("SAT_POSITION_COLUMNS", ["recorded_at", "satelite_id","longitude","latitude"])
 SATELITE_COLUMS = namedtuple("SATELITE_COLUMNS", ["id", "name"])
 
 
@@ -33,11 +37,14 @@ def satelite_position_record_factory(json_obj):
 	In the records I've seen TIME_SYSTEM is "UTC", so we'll assume it for now
 	"id" isn't in schema, but appears in the record, and is nice for PostgreSQL to use as Primary key and index on.
 	"""
-	return DB_COLUMNS(
-		recorded_at=datetime.strptime(json_obj["spaceTrack"]["EPOCH"], "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=timezone.utc).timestamp(),
+	UTC = tz.gettz("UTC")
+	if json_obj["longitude"] is None or json_obj["latitude"] is None:
+		return None
+	return SAT_POSITION_COLUMNS(
+		recorded_at=parser.parse(json_obj["spaceTrack"]["EPOCH"]).astimezone(tz.gettz("UTC")),
 		satelite_id=json_obj["id"],
-		longitude=json_obj["longitude"],
-		latitude=json_obj["latitude"]
+		longitude=decimal.Decimal(json_obj["longitude"]),
+		latitude=decimal.Decimal(json_obj["latitude"])
 	)
 
 def satelite_record_factory(json_obj):
@@ -46,23 +53,54 @@ def satelite_record_factory(json_obj):
 		name=json_obj["spaceTrack"]["OBJECT_NAME"]
 	)
 
-def convert_api_to_rows(json_data, factory):
-	return [factory(x) for x in json_data]
+def get_unique_only(records, index_to_compare):
+	cache = {}
+	result = []
+	for record in records:
+		if record[index_to_compare] not in cache:
+			cache[record[index_to_compare]] = True
+			result.append(record)
+	return result
 
-def import_json_data(data=None, connection=None):
+def convert_api_to_rows(json_data, factory):
+	return [factory(x) for x in json_data if factory(x) is not None]
+
+def copy_data(records, connection, table, fields):
+	try:
+		mgr = CopyManager(connection, table, fields)
+		mgr.copy(records)
+		connection.commit()
+	except ValueError as e:
+		print(str(e)) # TODO: remove
+		raise e
+		typer.echo(str(e), err=True)
+		return False
+	return True
+
+def import_data(data=None, connection=None):
 	"""
 	Takes in result of StarlinkAPI and copies it into DB.
 	First - need to get all of the satelites and insert them to not break the foreign key constraint.
 	Then add all of the data.
 	Returns success status
 	"""
-	satelites = convert_api_to_rows(data, satelite_record_factory)
+	satelite_data = convert_api_to_rows(data, satelite_record_factory)
+	satelite_data = get_unique_only(satelite_data, SATELITE_COLUMS._fields.index("id"))
+	success = copy_data(satelite_data, connection, SATELITE_TABLE, SATELITE_COLUMS._fields)
+	if not success:
+		typer.secho("Couldn't import satelites", fg=typer.colors.RED, err=True)
+		raise typer.Exit(code=1)
+	
 	satelite_positions = convert_api_to_rows(data, satelite_position_record_factory)
-
-
+	success = copy_data(satelite_positions, connection, SATELITE_POS_TABLE, SAT_POSITION_COLUMNS._fields)
+	if not success:
+		typer.secho("Couldn't import satelite positions", fg=typer.colors.RED, err=True)
+		raise typer.Exit(code=1)
+	
+	return True
 
 @app.command()
-def import_data(file: str = typer.Option("", help="JSON file to load the historic data from"), 
+def import_data_command(file: str = typer.Option("", help="JSON file to load the historic data from"), 
 		stdin: bool = typer.Option(False, envvar="POSTGRES_HOST", help="If you want to pipe in data instead of reading from a file."),
 		postgres_host: str = typer.Option(..., envvar="POSTGRES_HOST", prompt=True),
 		postgres_port: int = typer.Option(..., envvar="POSTGRES_POST", prompt=True),
@@ -89,7 +127,7 @@ def import_data(file: str = typer.Option("", help="JSON file to load the histori
 		typer.secho("Couldn't connect to DB", fg=typer.colors.RED, err=True)
 		raise typer.Exit(code=1)
 
-	import_json_data(data=data, connection=db_connection)
+	import_data(data=data, connection=db_connection)
 
 
 if __name__ == "__main__":
