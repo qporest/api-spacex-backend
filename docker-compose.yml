@@ -5,6 +5,8 @@ services:
     image: timescale/timescaledb-postgis:2.0.1-pg12
     container_name: timescale
     restart: always
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_PASSWORD: test
       POSTGRES_DB: spacex
