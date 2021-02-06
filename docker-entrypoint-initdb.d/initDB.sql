@@ -5,7 +5,7 @@ CREATE EXTENSION postgis;
 
 
 CREATE TABLE satelites (
-	id SERIAL PRIMARY KEY,
+	id uuid PRIMARY KEY,
 	name TEXT
 );
 
