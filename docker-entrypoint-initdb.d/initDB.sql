@@ -5,13 +5,13 @@ CREATE EXTENSION postgis;
 
 
 CREATE TABLE satelites (
-	id uuid PRIMARY KEY,
+	id TEXT PRIMARY KEY,
 	name TEXT
 );
 
 CREATE TABLE satelite_positions (
 	recorded_at TIMESTAMP,
-	satelite_id INT,
+	satelite_id TEXT,
 	longitude NUMERIC,
 	latitude NUMERIC,
 	CONSTRAINT fk_satelite
