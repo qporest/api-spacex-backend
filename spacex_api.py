@@ -6,6 +6,7 @@ from collections import namedtuple
 from datetime import datetime, timezone
 from dateutil import parser, tz
 import decimal
+import sys
 
 SATELITE_TABLE = "satelites"
 SATELITE_POS_TABLE = "satelite_positions"
@@ -71,12 +72,17 @@ def copy_data(records, connection, table, fields):
 		mgr = CopyManager(connection, table, fields)
 		mgr.copy(records)
 		connection.commit()
-	except ValueError as e:
-		print(str(e)) # TODO: remove
-		raise e
+	except psycopg2.Error as e:
 		typer.echo(str(e), err=True)
 		return False
 	return True
+
+def get_from_stdin():
+	res = []
+	for line in sys.stdin:
+		res.append(line)
+	return json.loads("".join(res))
+	
 
 def import_data(data=None, connection=None):
 	"""
@@ -102,13 +108,16 @@ def import_data(data=None, connection=None):
 
 @app.command("import")
 def import_data_command(file: str = typer.Option("", help="JSON file to load the historic data from"), 
-		stdin: bool = typer.Option(False, envvar="POSTGRES_HOST", help="If you want to pipe in data instead of reading from a file."),
+		stdin: bool = typer.Option(False, help="If you want to pipe in data instead of reading from a file."),
 		postgres_host: str = typer.Option(..., envvar="POSTGRES_HOST", prompt=True),
-		postgres_port: int = typer.Option(..., envvar="POSTGRES_POST", prompt=True),
+		postgres_port: int = typer.Option(..., envvar="POSTGRES_PORT", prompt=True),
 		postgres_user: str = typer.Option(..., envvar="POSTGRES_USER", prompt=True),
 		postgres_password: str = typer.Option(..., envvar="POSTGRES_PASSWORD", prompt=True, hide_input=True),
 		postgres_db: str = typer.Option(..., envvar="POSTGRES_DB", prompt=True)
 	):
+	"""
+	Takes in data from either a file or stdin and copies to a datatable.
+	"""
 	if not (stdin or file):
 		typer.secho("Need to provide either a file to read from or specify --stdin", fg=typer.colors.RED, err=True)
 		raise typer.Exit(code=1)
@@ -120,7 +129,7 @@ def import_data_command(file: str = typer.Option("", help="JSON file to load the
 		with open(file, 'r') as input_json:
 			data = json.load(input_json)
 	else:
-		pass
+		data = get_from_stdin()
 
 	db_connection = get_db_connection(username=postgres_user, password=postgres_password, 
 		host=postgres_host, port=postgres_port, db=postgres_db)
@@ -129,6 +138,7 @@ def import_data_command(file: str = typer.Option("", help="JSON file to load the
 		raise typer.Exit(code=1)
 	with db_connection:
 		import_data(data=data, connection=db_connection)
+	typer.secho("Success.", fg=typer.colors.GREEN)
 
 @app.command("latest")
 def get_latest(
@@ -140,6 +150,9 @@ def get_latest(
 		postgres_password: str = typer.Option(..., envvar="POSTGRES_PASSWORD", prompt=True, hide_input=True),
 		postgres_db: str = typer.Option(..., envvar="POSTGRES_DB", prompt=True)
 	):
+	"""
+	Gets the latest location before a given timestamp for given satelite.
+	"""
 	db_connection = get_db_connection(username=postgres_user, password=postgres_password, 
 		host=postgres_host, port=postgres_port, db=postgres_db)
 	with db_connection:
@@ -169,6 +182,9 @@ def get_closest(
 		postgres_password: str = typer.Option(..., envvar="POSTGRES_PASSWORD", prompt=True, hide_input=True),
 		postgres_db: str = typer.Option(..., envvar="POSTGRES_DB", prompt=True)
 	):
+	"""
+	Returns what satelite was the closest before given time to a given position in the world.
+	"""
 	db_connection = get_db_connection(username=postgres_user, password=postgres_password, 
 		host=postgres_host, port=postgres_port, db=postgres_db)
 	with db_connection:
