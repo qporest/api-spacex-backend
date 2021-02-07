@@ -34,7 +34,7 @@ Defaults:
 ## Task 2
 `python spacex_api.py import --file starlink_historical_data.json` To import the file. Additional prompts will appear for connection parameters.
 Or `env POSTGRES_USER=postgres POSTGRES_PASSWORD=test POSTGRES_DB=spacex POSTGRES_HOST=localhost POSTGRES_PORT=5432 python spacex_api.py import --file starlink_historical_data.json` to have the values read from environment.
-Or `cat starlink_historical_data.json | env env POSTGRES_USER=postgres POSTGRES_PASSWORD=test POSTGRES_DB=spacex POSTGRES_HOST=localhost POSTGRES_PORT=5432 python spacex_api.py import --stdin` to get the data from stdin. Can be used to pipe with curl
+Or `cat starlink_historical_data.json | env env POSTGRES_USER=postgres POSTGRES_PASSWORD=test POSTGRES_DB=spacex POSTGRES_HOST=localhost POSTGRES_PORT=5432 python spacex_api.py import --stdin` to get the data from stdin. Can be used to pipe with curl. This wasn't in the spec but was done for `fun`. As in I think it's pretty fun to pipe to it, but it's not really a fun thing.
 
 <details>
   <summary>Example</summary>
