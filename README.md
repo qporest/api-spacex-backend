@@ -33,15 +33,18 @@ Defaults:
 `python spacex_api.py --help` for the list of commands.
 ## Task 2
 `python spacex_api.py import --file starlink_historical_data.json` To import the file. Additional prompts will appear for connection parameters.
+
 Or `env POSTGRES_USER=postgres POSTGRES_PASSWORD=test POSTGRES_DB=spacex POSTGRES_HOST=localhost POSTGRES_PORT=5432 python spacex_api.py import --file starlink_historical_data.json` to have the values read from environment.
+
 Or `cat starlink_historical_data.json | env env POSTGRES_USER=postgres POSTGRES_PASSWORD=test POSTGRES_DB=spacex POSTGRES_HOST=localhost POSTGRES_PORT=5432 python spacex_api.py import --stdin` to get the data from stdin. Can be used to pipe with curl. This wasn't in the spec but was done for `fun`. As in I think it's pretty fun to pipe to it, but it's not really a fun thing.
 
 <details>
   <summary>Example</summary>
-  ```
-  ▶ env POSTGRES_USER=postgres POSTGRES_PASSWORD=test POSTGRES_DB=spacex POSTGRES_HOST=localhost POSTGRES_PORT=5432 python spacex_api.py import --file starlink_historical_data.json
-  Success.
-  ```
+
+```
+▶ env POSTGRES_USER=postgres POSTGRES_PASSWORD=test POSTGRES_DB=spacex POSTGRES_HOST=localhost POSTGRES_PORT=5432 python spacex_api.py import --file starlink_historical_data.json
+Success.
+```
 </details>
 
 ## Task 3
@@ -49,13 +52,14 @@ Or `cat starlink_historical_data.json | env env POSTGRES_USER=postgres POSTGRES_
 
 <details>
   <summary>Example</summary>
-  ```
-  ▶ env POSTGRES_USER=postgres POSTGRES_PASSWORD=test POSTGRES_DB=spacex POSTGRES_HOST=localhost POSTGRES_PORT=5432 python spacex_api.py latest
-  Time: 2021-01-26T06:26:20
-  Satelite id: 5eed7714096e590006985664
-  ['satelite_id', 'last', 'last']
-  ('5eed7714096e590006985664', Decimal('52'), Decimal('53.120406589983275580379995517432689666748046875'))
-  ```
+
+```
+▶ env POSTGRES_USER=postgres POSTGRES_PASSWORD=test POSTGRES_DB=spacex POSTGRES_HOST=localhost POSTGRES_PORT=5432 python spacex_api.py latest
+Time: 2021-01-26T06:26:20
+Satelite id: 5eed7714096e590006985664
+['satelite_id', 'last', 'last']
+('5eed7714096e590006985664', Decimal('52'), Decimal('53.120406589983275580379995517432689666748046875'))
+```
 </details>
 
 
@@ -64,13 +68,14 @@ Or `cat starlink_historical_data.json | env env POSTGRES_USER=postgres POSTGRES_
 
 <details>
   <summary>Example</summary>
-  ```
-  ▶ env POSTGRES_USER=postgres POSTGRES_PASSWORD=test POSTGRES_DB=spacex POSTGRES_HOST=localhost POSTGRES_PORT=5432 python spacex_api.py closest
-  Time: 2021-01-26T06:26:20
-  Longitude: 52
-  Latitude: 53
-  ['satelite_id', 'longitude', 'latitude', 'st_distance']
-  ('5eed7714096e590006985664', Decimal('52'), Decimal('53.120406589983275580379995517432689666748046875'), 11353.569371288984)
-  ```
+
+```
+▶ env POSTGRES_USER=postgres POSTGRES_PASSWORD=test POSTGRES_DB=spacex POSTGRES_HOST=localhost POSTGRES_PORT=5432 python spacex_api.py closest
+Time: 2021-01-26T06:26:20
+Longitude: 52
+Latitude: 53
+['satelite_id', 'longitude', 'latitude', 'st_distance']
+('5eed7714096e590006985664', Decimal('52'), Decimal('53.120406589983275580379995517432689666748046875'), 11353.569371288984)
+```
 </details>
 
